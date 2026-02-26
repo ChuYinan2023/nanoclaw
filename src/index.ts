@@ -7,6 +7,8 @@ import {
   MAIN_GROUP_FOLDER,
   POLL_INTERVAL,
   TRIGGER_PATTERN,
+  WEB_ENABLED,
+  WEB_TOKEN,
 } from './config.js';
 import { WhatsAppChannel } from './channels/whatsapp.js';
 import {
@@ -478,6 +480,18 @@ async function main(): Promise<void> {
   whatsapp = new WhatsAppChannel(channelOpts);
   channels.push(whatsapp);
   await whatsapp.connect();
+
+  // Web channel (optional — enabled via WEB_ENABLED=true)
+  if (WEB_ENABLED) {
+    if (!WEB_TOKEN) {
+      logger.error('WEB_ENABLED=true but WEB_TOKEN is not set — refusing to start web channel');
+      process.exit(1);
+    }
+    const { WebChannel } = await import('./channels/web.js');
+    const web = new WebChannel({ ...channelOpts, registerGroup });
+    channels.push(web);
+    await web.connect();
+  }
 
   // Start subsystems (independently of connection handler)
   startSchedulerLoop({

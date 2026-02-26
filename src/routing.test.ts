@@ -22,6 +22,11 @@ describe('JID ownership patterns', () => {
     const jid = '12345678@s.whatsapp.net';
     expect(jid.endsWith('@s.whatsapp.net')).toBe(true);
   });
+
+  it('Web session JID: starts with web:', () => {
+    const jid = 'web:abc123def456';
+    expect(jid.startsWith('web:')).toBe(true);
+  });
 });
 
 // --- getAvailableGroups ---

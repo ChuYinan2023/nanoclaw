@@ -340,6 +340,30 @@ export function getMessagesSince(
     .all(chatJid, sinceTimestamp, `${botPrefix}:%`) as NewMessage[];
 }
 
+/**
+ * Get messages for display (includes both user and bot messages).
+ * Used by the web channel to send chat history to the browser on connect.
+ */
+export function getMessagesForDisplay(
+  chatJid: string,
+  sinceTimestamp: string,
+  limit = 50,
+): NewMessage[] {
+  return db
+    .prepare(
+      `
+    SELECT id, chat_jid, sender, sender_name, content, timestamp, is_from_me, is_bot_message
+    FROM messages
+    WHERE chat_jid = ? AND timestamp > ?
+      AND content != '' AND content IS NOT NULL
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `,
+    )
+    .all(chatJid, sinceTimestamp, limit)
+    .reverse() as NewMessage[];
+}
+
 export function createTask(
   task: Omit<ScheduledTask, 'last_run' | 'last_result'>,
 ): void {
@@ -570,6 +594,25 @@ export function setRegisteredGroup(jid: string, group: RegisteredGroup): void {
     group.containerConfig ? JSON.stringify(group.containerConfig) : null,
     group.requiresTrigger === undefined ? 1 : group.requiresTrigger ? 1 : 0,
   );
+}
+
+/**
+ * Delete a registered group by JID.
+ * Used by the web channel to clean up stale sessions.
+ */
+export function deleteRegisteredGroup(jid: string): void {
+  db.prepare('DELETE FROM registered_groups WHERE jid = ?').run(jid);
+}
+
+/**
+ * Get the last message time for a chat from the chats table.
+ * Used by the web channel for TTL-based session cleanup (based on last activity, not registration time).
+ */
+export function getChatLastMessageTime(jid: string): string | null {
+  const row = db
+    .prepare('SELECT last_message_time FROM chats WHERE jid = ?')
+    .get(jid) as { last_message_time: string } | undefined;
+  return row?.last_message_time ?? null;
 }
 
 export function getAllRegisteredGroups(): Record<string, RegisteredGroup> {
