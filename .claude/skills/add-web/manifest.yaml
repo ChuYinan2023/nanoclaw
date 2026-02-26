@@ -1,0 +1,24 @@
+skill: web
+version: 1.0.0
+description: "Browser-based web chat channel via WebSocket"
+core_version: 0.1.0
+adds:
+  - src/channels/web.ts
+  - src/channels/web.test.ts
+modifies:
+  - src/index.ts
+  - src/config.ts
+  - src/db.ts
+  - src/routing.test.ts
+structured:
+  npm_dependencies:
+    ws: "^8.19.0"
+  npm_dev_dependencies:
+    "@types/ws": "^8.5.10"
+  env_additions:
+    - WEB_ENABLED
+    - WEB_PORT
+    - WEB_TOKEN
+conflicts: []
+depends: []
+test: "npx vitest run src/channels/web.test.ts src/routing.test.ts"
